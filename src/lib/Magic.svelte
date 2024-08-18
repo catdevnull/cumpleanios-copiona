@@ -55,6 +55,7 @@
     editing = false;
     existingText = [...existingText, { text: currentlyEditingText, ...pos }];
     currentlyEditingText = "";
+    pos = mouse;
   }
 </script>
 
