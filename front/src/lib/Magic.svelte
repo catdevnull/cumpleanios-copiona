@@ -117,16 +117,21 @@
 
   const colores = [
     "transparent",
-    "#ff0000",
-    "#00ff00",
-    "#0000ff",
-    "#ffff00",
-    "#00ffff",
-    "#ff00ff",
+    "#70D6FF",
+    "#FF70A6",
+    "#FF9770",
+    "#FFD670",
+    "#E9FF70",
   ];
   function setColor(color: string) {
     backgroundColor = color;
   }
+
+  $: caretColor = currentlyEditingText
+    ? "black"
+    : backgroundColor === "transparent"
+      ? "black"
+      : backgroundColor;
 </script>
 
 <svelte:window on:beforeunload={scrollToCenter} />
@@ -170,7 +175,8 @@
   hidden={wsState !== "connected"}
   bind:value={currentlyEditingText}
   type="text"
-  style={`top: ${pos.y}px; left: ${pos.x}px; background-color: ${currentlyEditingText ? backgroundColor : "transparent"};`}
+  style={`top: ${pos.y}px; left: ${pos.x}px; background-color: ${currentlyEditingText ? backgroundColor : "transparent"};
+  caret-color: ${caretColor};`}
   on:input={input}
   on:keypress={keypress}
   on:blur={commit}
