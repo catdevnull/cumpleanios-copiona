@@ -1,5 +1,37 @@
-import { zClientMessage, type Coso, type ServerMessage } from "shared";
-let state: { cosos: Coso[] } = { cosos: [] };
+import {
+  zClientMessage,
+  zCoso,
+  type Coso,
+  type ServerMessage,
+  type State,
+} from "shared";
+
+import { Database } from "bun:sqlite";
+
+const db = new Database("cosos.db");
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS cosos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  json TEXT NOT NULL
+);
+`);
+
+const cososQuery = db.query<{ json: string }, {}>("SELECT json FROM cosos");
+function getState(): State {
+  const rows = cososQuery.all({});
+  const cosos = rows.map((row) => {
+    const json = JSON.parse(row.json);
+    return zCoso.parse(json);
+  });
+  return { cosos };
+}
+const newCosoQuery = db.query<{ id: number }, string>(
+  "INSERT INTO cosos (json) VALUES (?1)",
+);
+function addCoso(coso: Coso) {
+  newCosoQuery.run(JSON.stringify(coso));
+}
 
 const server = Bun.serve<{ authToken: string }>({
   fetch(req, server) {
@@ -17,7 +49,7 @@ const server = Bun.serve<{ authToken: string }>({
     async open(ws) {
       const msg: ServerMessage = {
         type: "baseState",
-        state,
+        state: getState(),
       };
       ws.send(JSON.stringify(msg));
       ws.subscribe("copiona");
@@ -36,7 +68,7 @@ const server = Bun.serve<{ authToken: string }>({
       const { type, coso } = msg.data;
       switch (type) {
         case "createdCoso": {
-          state.cosos.push(coso);
+          addCoso(coso);
           const msg: ServerMessage = {
             type: "newCoso",
             coso,

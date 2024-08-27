@@ -13,6 +13,8 @@ export const zState = z.object({
   cosos: z.array(zCoso),
 });
 
+export type State = z.infer<typeof zState>;
+
 export const zServerMessage = z.discriminatedUnion("type", [
   z.object({ type: z.literal("baseState"), state: zState }),
   z.object({ type: z.literal("newCoso"), coso: zCoso }),
