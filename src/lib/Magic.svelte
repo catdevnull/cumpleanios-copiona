@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
 
   let editing = false;
   let currentlyEditingText = "";
@@ -11,20 +11,20 @@
   const genRandom = () => Math.random() * 10 + 10;
   let random = genRandom();
 
-  let inputEl: HTMLInputElement;
-
   function mousemove(
     event: Event & {
+      currentTarget: HTMLElement;
       screenX: number;
       screenY: number;
       clientX: number;
       clientY: number;
-    }
+    },
   ) {
-    mouse = {
-      x: event.clientX,
-      y: event.clientY,
-    };
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left; //x position within the element.
+    const y = event.clientY - rect.top; //y position within the element.
+
+    mouse = { x, y };
     if (!editing) pos = mouse;
   }
 
@@ -37,7 +37,7 @@
       commit();
       await tick();
       const span = Array.from(document.querySelectorAll("span")).find(
-        (span) => span.textContent == oldText
+        (span) => span.textContent == oldText,
       )!;
 
       pos.x += span.clientWidth;
@@ -57,10 +57,38 @@
     currentlyEditingText = "";
     pos = mouse;
   }
+
+  let divEl: HTMLDivElement;
+
+  function scrollToCenter() {
+    const vw = Math.max(
+      document.documentElement.clientWidth || 0,
+      window.innerWidth || 0,
+    );
+    const vh = Math.max(
+      document.documentElement.clientHeight || 0,
+      window.innerHeight || 0,
+    );
+
+    window.scrollTo(
+      divEl.clientWidth / 2 - vw / 2,
+      divEl.clientHeight / 2 - vh / 2,
+    );
+  }
+
+  onMount(() => {
+    scrollToCenter();
+  });
 </script>
 
+<svelte:window on:beforeunload={scrollToCenter} />
+
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div on:mousemove={mousemove}>
+<div
+  bind:this={divEl}
+  on:mousemove={mousemove}
+  style="width: 2500px; height: 2500px;"
+>
   {#each existingText as { text, x, y }}
     <span style={`top: ${y}px; left: ${x}px;`}>{text}</span>
   {/each}
@@ -73,14 +101,9 @@
   on:input={input}
   on:keypress={keypress}
   on:blur={commit}
-  bind:this={inputEl}
 />
 
 <style>
-  div {
-    width: 100vw;
-    height: 100vh;
-  }
   input,
   span {
     position: absolute;
