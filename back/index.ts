@@ -8,7 +8,7 @@ import {
 
 import { Database } from "bun:sqlite";
 
-const db = new Database("cosos.db");
+const db = new Database(process.env.DATABASE_PATH ?? "cosos.db");
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS cosos (
