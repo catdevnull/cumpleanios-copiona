@@ -207,6 +207,7 @@
     display: flex;
     justify-content: center;
     gap: 8px;
+    padding-top: 4px;
   }
   button {
     pointer-events: all;
