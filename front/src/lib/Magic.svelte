@@ -2,6 +2,7 @@
   import { onDestroy, onMount, tick } from "svelte";
   import { API_URL } from "./consts";
   import { zServerMessage, type ClientMessage, type Coso } from "shared";
+  import Cowboy from "./cowboy.svelte";
 
   let ws: WebSocket;
 
@@ -146,7 +147,7 @@
 <div
   bind:this={divEl}
   on:mousemove={mousemove}
-  style="width: 2500px; height: 2500px;"
+  style="width: 2500px; height: 2500px; position: relative;"
 >
   {#each [...existingText, ...tempText] as { text, backgroundColor, x, y }}
     <span
@@ -154,6 +155,10 @@
       >{text}</span
     >
   {/each}
+  <a href="https://nulo.in" target="_blank" class="nulo">
+    producido por
+    <Cowboy style="width: 1em; height: 1em;" />Nulo Inc™️
+  </a>
 </div>
 
 <div class="nav">
@@ -241,5 +246,18 @@
   }
   .connect {
     width: min-content;
+  }
+  .nulo {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    font-size: 32px;
+    text-decoration: none;
+    line-height: 1;
+    padding: 4px;
+    color: lightcyan;
+    pointer-events: all;
+    background: #ff70a6;
+    z-index: 99;
   }
 </style>
