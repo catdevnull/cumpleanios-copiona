@@ -5,8 +5,14 @@
   let currentlyEditingText = "";
   let mouse = { x: 0, y: 0 };
   let pos = { x: 0, y: 0 };
+  let backgroundColor = "#ffffff";
 
-  let existingText: { text: string; x: number; y: number }[] = [];
+  let existingText: {
+    text: string;
+    backgroundColor: string;
+    x: number;
+    y: number;
+  }[] = [];
 
   const genRandom = () => Math.random() * 10 + 10;
   let random = genRandom();
@@ -53,7 +59,10 @@
 
   function commit() {
     editing = false;
-    existingText = [...existingText, { text: currentlyEditingText, ...pos }];
+    existingText = [
+      ...existingText,
+      { text: currentlyEditingText, backgroundColor, ...pos },
+    ];
     currentlyEditingText = "";
     pos = mouse;
   }
@@ -79,6 +88,18 @@
   onMount(() => {
     scrollToCenter();
   });
+
+  const colores = [
+    "#ff0000",
+    "#00ff00",
+    "#0000ff",
+    "#ffff00",
+    "#00ffff",
+    "#ff00ff",
+  ];
+  function setColor(color: string) {
+    backgroundColor = color;
+  }
 </script>
 
 <svelte:window on:beforeunload={scrollToCenter} />
@@ -89,15 +110,28 @@
   on:mousemove={mousemove}
   style="width: 2500px; height: 2500px;"
 >
-  {#each existingText as { text, x, y }}
-    <span style={`top: ${y}px; left: ${x}px;`}>{text}</span>
+  {#each existingText as { text, backgroundColor, x, y }}
+    <span style={`top: ${y}px; left: ${x}px; background: ${backgroundColor};`}
+      >{text}</span
+    >
+  {/each}
+</div>
+
+<div class="colors">
+  {#each colores as color}
+    <button
+      class="color"
+      style={`background: ${color};`}
+      on:click={() => setColor(color)}
+    >
+    </button>
   {/each}
 </div>
 
 <input
   bind:value={currentlyEditingText}
   type="text"
-  style={`top: ${pos.y}px; left: ${pos.x}px;`}
+  style={`top: ${pos.y}px; left: ${pos.x}px; background: ${currentlyEditingText ? backgroundColor : "transparent"};`}
   on:input={input}
   on:keypress={keypress}
   on:blur={commit}
@@ -117,5 +151,25 @@
     line-height: 1;
     padding: 0;
     margin: 0;
+  }
+
+  .colors {
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    gap: 8px;
+  }
+  .color {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    margin: 0;
+    border: 0;
   }
 </style>
