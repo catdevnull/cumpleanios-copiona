@@ -13,6 +13,7 @@
   let wsState: "connected" | "connecting" | "disconnected" = "connecting";
 
   let existingText: Coso[] = [];
+  let tempText: Coso[] = [];
 
   const genRandom = () => Math.random() * 10 + 10;
   let random = genRandom();
@@ -59,11 +60,13 @@
 
   function commit() {
     editing = false;
+    const coso: Coso = { text: currentlyEditingText, backgroundColor, ...pos };
     const msg: ClientMessage = {
       type: "createdCoso",
-      coso: { text: currentlyEditingText, backgroundColor, ...pos },
+      coso,
     };
     ws.send(JSON.stringify(msg));
+    tempText = [...tempText, coso];
     currentlyEditingText = "";
     pos = mouse;
   }
@@ -99,6 +102,9 @@
           break;
         case "newCoso":
           existingText = [...existingText, msg.coso];
+          tempText = tempText.filter(
+            (coso) => coso.x !== msg.coso.x && coso.y !== msg.coso.y,
+          );
           break;
       }
     });
@@ -142,7 +148,7 @@
   on:mousemove={mousemove}
   style="width: 2500px; height: 2500px;"
 >
-  {#each existingText as { text, backgroundColor, x, y }}
+  {#each [...existingText, ...tempText] as { text, backgroundColor, x, y }}
     <span
       style={`top: ${y}px; left: ${x}px; background-color: ${backgroundColor};`}
       >{text}</span
@@ -155,7 +161,7 @@
     {#each colores as color}
       <button
         class="color"
-        style={`background: ${color}; border: 1px solid black;`}
+        style={`background: ${color}; outline: ${backgroundColor === color ? "3px solid black" : "1px solid black"};`}
         on:click={() => setColor(color)}
       >
       </button>
@@ -214,6 +220,8 @@
     justify-content: center;
     gap: 8px;
     padding-top: 4px;
+    margin: 0 auto;
+    pointer-events: all;
   }
   button {
     pointer-events: all;
