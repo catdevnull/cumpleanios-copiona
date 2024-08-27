@@ -2,7 +2,7 @@
 
 # Adjust BUN_VERSION as desired
 ARG BUN_VERSION=1.1.26
-FROM oven/bun:${BUN_VERSION}-slim as base
+FROM oven/bun:${BUN_VERSION} AS base
 
 LABEL fly_launch_runtime="Bun"
 
@@ -14,7 +14,7 @@ ENV NODE_ENV="production"
 
 
 # Throw-away build stage to reduce size of final image
-FROM base as build
+FROM base AS build
 
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
@@ -24,16 +24,17 @@ RUN apt-get update -qq && \
 COPY --link . .
 WORKDIR /app/back
 RUN bun install --ci
+RUN bun build ./index.ts --compile --outfile=/usr/bin/back
 
 
 # Final stage for app image
 FROM base
 
 # Copy built application
-COPY --from=build /app /app
+COPY --from=build /usr/bin/back /usr/bin/back
 
 WORKDIR /app/back
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD [ "bun", "index.ts" ]
+CMD [ "back" ]
