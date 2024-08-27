@@ -9,7 +9,7 @@
   let currentlyEditingText = "";
   let mouse = { x: 0, y: 0 };
   let pos = { x: 0, y: 0 };
-  let backgroundColor = "#ffffff";
+  let backgroundColor = "transparent";
   let wsState: "connected" | "connecting" | "disconnected" = "connecting";
 
   let existingText: Coso[] = [];
