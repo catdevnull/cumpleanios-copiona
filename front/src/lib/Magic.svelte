@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
+  import { API_URL } from "./consts";
+  import { zServerMessage, type ClientMessage, type Coso } from "shared";
+
+  let ws: WebSocket;
 
   let editing = false;
   let currentlyEditingText = "";
   let mouse = { x: 0, y: 0 };
   let pos = { x: 0, y: 0 };
   let backgroundColor = "#ffffff";
+  let wsState: "connected" | "connecting" | "disconnected" = "connecting";
 
-  let existingText: {
-    text: string;
-    backgroundColor: string;
-    x: number;
-    y: number;
-  }[] = [];
+  let existingText: Coso[] = [];
 
   const genRandom = () => Math.random() * 10 + 10;
   let random = genRandom();
@@ -59,10 +59,11 @@
 
   function commit() {
     editing = false;
-    existingText = [
-      ...existingText,
-      { text: currentlyEditingText, backgroundColor, ...pos },
-    ];
+    const msg: ClientMessage = {
+      type: "createdCoso",
+      coso: { text: currentlyEditingText, backgroundColor, ...pos },
+    };
+    ws.send(JSON.stringify(msg));
     currentlyEditingText = "";
     pos = mouse;
   }
@@ -85,11 +86,37 @@
     );
   }
 
+  function connect() {
+    wsState = "connecting";
+    ws = new WebSocket(API_URL.replace("http", "ws"));
+    ws.addEventListener("message", (event) => {
+      const json = JSON.parse(event.data);
+      const msg = zServerMessage.parse(json);
+      console.log("server:", msg);
+      switch (msg.type) {
+        case "baseState":
+          existingText = msg.state.cosos;
+          break;
+        case "newCoso":
+          existingText = [...existingText, msg.coso];
+          break;
+      }
+    });
+    ws.addEventListener("open", () => (wsState = "connected"));
+    ws.addEventListener("close", () => (wsState = "disconnected"));
+    ws.addEventListener("error", () => (wsState = "disconnected"));
+  }
+  onDestroy(() => {
+    ws?.close();
+  });
+
   onMount(() => {
     scrollToCenter();
+    connect();
   });
 
   const colores = [
+    "transparent",
     "#ff0000",
     "#00ff00",
     "#0000ff",
@@ -111,27 +138,39 @@
   style="width: 2500px; height: 2500px;"
 >
   {#each existingText as { text, backgroundColor, x, y }}
-    <span style={`top: ${y}px; left: ${x}px; background: ${backgroundColor};`}
+    <span
+      style={`top: ${y}px; left: ${x}px; background-color: ${backgroundColor};`}
       >{text}</span
     >
   {/each}
 </div>
 
-<div class="colors">
-  {#each colores as color}
-    <button
-      class="color"
-      style={`background: ${color};`}
-      on:click={() => setColor(color)}
-    >
-    </button>
-  {/each}
+<div class="nav">
+  <div class="colors">
+    {#each colores as color}
+      <button
+        class="color"
+        style={`background: ${color}; border: 1px solid black;`}
+        on:click={() => setColor(color)}
+      >
+      </button>
+    {/each}
+  </div>
+  <div class="disconnected">
+    {#if wsState === "disconnected"}
+      se te desconectó
+      <button class="connect" on:click={connect}>reconectar</button>
+    {:else if wsState === "connecting"}
+      conectando
+    {/if}
+  </div>
 </div>
 
 <input
+  hidden={wsState !== "connected"}
   bind:value={currentlyEditingText}
   type="text"
-  style={`top: ${pos.y}px; left: ${pos.x}px; background: ${currentlyEditingText ? backgroundColor : "transparent"};`}
+  style={`top: ${pos.y}px; left: ${pos.x}px; background-color: ${currentlyEditingText ? backgroundColor : "transparent"};`}
   on:input={input}
   on:keypress={keypress}
   on:blur={commit}
@@ -151,16 +190,26 @@
     line-height: 1;
     padding: 0;
     margin: 0;
+    width: max-content;
   }
 
-  .colors {
-    display: flex;
-    justify-content: center;
+  .nav {
     position: fixed;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     top: 0;
     left: 0;
     width: 100%;
+    pointer-events: none;
+  }
+  .colors {
+    display: flex;
+    justify-content: center;
     gap: 8px;
+  }
+  button {
+    pointer-events: all;
   }
   .color {
     width: 32px;
@@ -171,5 +220,11 @@
     padding: 0;
     margin: 0;
     border: 0;
+  }
+  .disconnected {
+    margin: 0 auto;
+  }
+  .connect {
+    width: min-content;
   }
 </style>
