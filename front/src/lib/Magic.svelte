@@ -10,7 +10,8 @@
   let currentlyEditingText = "";
   let mouse = { x: 0, y: 0 };
   let pos = { x: 0, y: 0 };
-  let backgroundColor = "transparent";
+  type Color = (typeof colores)[number];
+  let backgroundColor: Color = "#ffffff";
   let wsState: "connected" | "connecting" | "disconnected" = "connecting";
 
   let existingText: Coso[] = [];
@@ -123,20 +124,20 @@
   });
 
   const colores = [
-    "transparent",
+    "#ffffff",
     "#70D6FF",
     "#FF70A6",
     "#FF9770",
     "#FFD670",
     "#E9FF70",
-  ];
-  function setColor(color: string) {
+  ] as const;
+  function setColor(color: Color) {
     backgroundColor = color;
   }
 
   $: caretColor = currentlyEditingText
     ? "black"
-    : backgroundColor === "transparent"
+    : backgroundColor === "#ffffff"
       ? "black"
       : backgroundColor;
 </script>
