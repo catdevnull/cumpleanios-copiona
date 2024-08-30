@@ -34,6 +34,7 @@ function addCoso(coso: Coso) {
 }
 
 const server = Bun.serve<{ authToken: string }>({
+  hostname: "0.0.0.0",
   fetch(req, server) {
     const success = server.upgrade(req);
     if (success) {
