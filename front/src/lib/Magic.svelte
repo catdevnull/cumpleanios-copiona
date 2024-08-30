@@ -30,8 +30,8 @@
     },
   ) {
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left; //x position within the element.
-    const y = event.clientY - rect.top; //y position within the element.
+    const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
+    const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
 
     mouse = { x, y };
     if (!editing) pos = mouse;
@@ -49,8 +49,8 @@
         (span) => span.textContent == oldText,
       )!;
 
-      pos.x += span.clientWidth;
-      pos.y += 32;
+      pos.x = Math.min(pos.x + span.clientWidth, divEl.clientWidth - 10);
+      pos.y = Math.min(pos.y + 32, divEl.clientHeight - 10);
       random = genRandom();
     }
   }
@@ -139,11 +139,7 @@
 <svelte:window on:beforeunload={scrollToCenter} />
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div
-  bind:this={divEl}
-  on:mousemove={mousemove}
-  style="width: 2500px; height: 2500px; position: relative;"
->
+<div class="canvas" bind:this={divEl} on:mousemove={mousemove}>
   {#each [...existingText, ...tempText] as { text, backgroundColor, x, y }}
     <span
       style={`top: ${y}px; left: ${x}px; background-color: ${backgroundColor};`}
@@ -154,6 +150,17 @@
     producido por
     <Cowboy style="width: 1em; height: 1em;" />Nulo Inc™️
   </a>
+
+  <input
+    hidden={wsState !== "connected"}
+    bind:value={currentlyEditingText}
+    type="text"
+    style={`top: ${pos.y}px; left: ${pos.x}px; background-color: ${currentlyEditingText ? backgroundColor : "transparent"};
+    caret-color: ${caretColor};`}
+    on:input={input}
+    on:keypress={keypress}
+    on:blur={commit}
+  />
 </div>
 
 <div class="nav">
@@ -177,18 +184,13 @@
   </div>
 </div>
 
-<input
-  hidden={wsState !== "connected"}
-  bind:value={currentlyEditingText}
-  type="text"
-  style={`top: ${pos.y}px; left: ${pos.x}px; background-color: ${currentlyEditingText ? backgroundColor : "transparent"};
-  caret-color: ${caretColor};`}
-  on:input={input}
-  on:keypress={keypress}
-  on:blur={commit}
-/>
-
 <style>
+  .canvas {
+    width: 2500px;
+    height: 2500px;
+    position: relative;
+    overflow: clip;
+  }
   input,
   span {
     position: absolute;
