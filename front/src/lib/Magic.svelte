@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
+  import linkifyStr from "linkify-string";
+
   import { API_URL } from "./consts";
   import { zServerMessage, type ClientMessage, type Coso } from "shared";
   import Cowboy from "./cowboy.svelte";
@@ -142,8 +144,14 @@
 <div class="canvas" bind:this={divEl} on:mousemove={mousemove}>
   {#each [...existingText, ...tempText] as { text, backgroundColor, x, y }}
     <span
-      style={`top: ${y}px; left: ${x}px; background-color: ${backgroundColor};`}
-      >{text}</span
+      style={`
+        top: ${y}px;
+        left: ${x}px;
+        background-color: ${backgroundColor};
+        /* z-index: ${linkifyStr(text).includes("<a") ? 50 : 0}; */
+        --top: ${y}px;
+        --left: ${x}px;
+      `}>{@html linkifyStr(text, { target: "_blank" })}</span
     >
   {/each}
   <a href="https://nulo.in" target="_blank" class="nulo">
@@ -256,5 +264,25 @@
     pointer-events: all;
     background: #ff70a6;
     z-index: 99;
+  }
+  :global(a) {
+    color: inherit !important;
+  }
+  :global(a::before) {
+    content: "↗";
+    position: absolute;
+    top: 0;
+    left: -36px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ddd;
+    border-radius: 4px;
+    font-size: 32px;
+    line-height: 1;
+    z-index: 50;
+    pointer-events: all;
   }
 </style>
